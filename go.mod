@@ -1,4 +1,4 @@
-module gdk
+module github.com/Triste-liu/gdk
 
 go 1.20
 
