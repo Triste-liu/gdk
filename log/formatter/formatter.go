@@ -3,6 +3,7 @@ package formatter
 import (
 	"bytes"
 	"fmt"
+	"github.com/Triste-liu/gdk/log/utils"
 	"github.com/sirupsen/logrus"
 	"sort"
 	"strings"
@@ -54,12 +55,14 @@ func (f *Formatter) writeCaller(b *bytes.Buffer, entry *logrus.Entry) {
 	if entry.HasCaller() {
 		// a.b:c
 		// E:/service-center/service/service.go  service-center/service.PingJob   59
-		fmt.Fprintf(
-			b,
-			"%s:%d",
-			entry.Caller.Function,
-			entry.Caller.Line,
-		)
+		//fmt.Fprintf(
+		//	b,
+		//	"%s:%d",
+		//	entry.Caller.Function,
+		//	entry.Caller.Line,
+		//)
+		caller := utils.EntryCallerHandler(entry)
+		b.WriteString(caller)
 	}
 	b.WriteString(f.FieldsSeparator)
 }
