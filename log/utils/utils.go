@@ -13,9 +13,13 @@ func EntryCallerHandler(entry *logrus.Entry) (caller string) {
 	if err != nil {
 		return ""
 	}
+	goPath := os.Getenv("GOPATH")
+	goPath = strings.Replace(goPath, "\\", "/", -1)
+
 	parentDir := filepath.Dir(filepath.Clean(wd))
 	parentDir = strings.Replace(parentDir, "\\", "/", -1)
 	file := strings.TrimPrefix(entry.Caller.File, parentDir+"/")
+	file = strings.TrimPrefix(file, goPath)
 	funcSplit := strings.Split(entry.Caller.Function, "/")
 	function := funcSplit[len(funcSplit)-1]
 	caller = fmt.Sprintf("%s:%s:%d", file, function, entry.Caller.Line)

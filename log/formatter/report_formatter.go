@@ -2,8 +2,8 @@ package formatter
 
 import (
 	"encoding/json"
-	"github.com/Triste-liu/gdk/log/utils"
 	"github.com/sirupsen/logrus"
+	"github.com/triste-liu/gdk/log/utils"
 )
 
 type ReportFormatter struct {

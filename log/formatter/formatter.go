@@ -3,8 +3,8 @@ package formatter
 import (
 	"bytes"
 	"fmt"
-	"github.com/Triste-liu/gdk/log/utils"
 	"github.com/sirupsen/logrus"
+	"github.com/triste-liu/gdk/log/utils"
 	"sort"
 	"strings"
 	"time"

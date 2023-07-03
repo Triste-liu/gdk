@@ -1,9 +1,9 @@
 package instance
 
 import (
-	"github.com/Triste-liu/gdk/log/formatter"
-	"github.com/Triste-liu/gdk/log/hook"
 	"github.com/sirupsen/logrus"
+	"github.com/triste-liu/gdk/log/formatter"
+	"github.com/triste-liu/gdk/log/hook"
 	"io"
 )
 
