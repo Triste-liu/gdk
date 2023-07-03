@@ -15,6 +15,7 @@ func EntryCallerHandler(entry *logrus.Entry) (caller string) {
 	}
 	goPath := os.Getenv("GOPATH")
 	goPath = strings.Replace(goPath, "\\", "/", -1)
+	goPath = goPath + "/pkg/mod/"
 
 	parentDir := filepath.Dir(filepath.Clean(wd))
 	parentDir = strings.Replace(parentDir, "\\", "/", -1)
