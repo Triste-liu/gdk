@@ -9,6 +9,6 @@ import (
 func EntryCallerHandler(entry *logrus.Entry) (caller string) {
 	funcSplit := strings.Split(entry.Caller.Function, "/")
 	function := funcSplit[len(funcSplit)-1]
-	caller = fmt.Sprintf("%s(%s:%d)", function, entry.Caller.File, entry.Caller.Line)
+	caller = fmt.Sprintf("%s:%s:%d", entry.Caller.File, function, entry.Caller.Line)
 	return
 }
