@@ -43,7 +43,7 @@ func (h *StackHook) Levels() []logrus.Level {
 func (h *StackHook) Fire(entry *logrus.Entry) error {
 	p := make([]uintptr, 32)
 	n := runtime.Callers(8, p)
-	frames := runtime.CallersFrames(p[:n-2])
+	frames := runtime.CallersFrames(p[:n])
 	for {
 		frame, more := frames.Next()
 		st := fmt.Sprintf("\n%s:%d  ->  %s", frame.File, frame.Line, frame.Function)
