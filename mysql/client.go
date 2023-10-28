@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/triste-liu/gdk/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -127,7 +127,6 @@ type ClientConfig struct {
 //}
 
 type LoggerConfig struct {
-	Logger                    *logrus.Logger
 	SlowThreshold             time.Duration // 慢查询阈值
 	IgnoreRecordNotFoundError bool          // 忽略未找到错误
 	ParameterizedQueries      bool          // sql是否打印参数
@@ -140,17 +139,17 @@ func (l LoggerConfig) LogMode(level gormLogger.LogLevel) gormLogger.Interface {
 }
 
 func (l LoggerConfig) Info(ctx context.Context, msg string, data ...interface{}) {
-	l.Logger.Info(append([]interface{}{msg}, data...))
+	log.Info(msg, data...)
 }
 
 // Warn print warn messages
 func (l LoggerConfig) Warn(ctx context.Context, msg string, data ...interface{}) {
-	l.Logger.Warn(append([]interface{}{msg}, data...))
+	log.Warning(msg, data...)
 }
 
 // Error print error messages
 func (l LoggerConfig) Error(ctx context.Context, msg string, data ...interface{}) {
-	l.Logger.Error(append([]interface{}{msg}, data...))
+	log.Error(msg, data...)
 }
 
 // Trace print sql message
@@ -166,14 +165,14 @@ func (l LoggerConfig) Trace(ctx context.Context, begin time.Time, fc func() (str
 		} else {
 			logText = fmt.Sprintf("%s [%.3f ms] [rows:%d] [%s]", err, float64(elapsed.Microseconds())/1e3, rows, sql)
 		}
-		l.Logger.Error(logText)
+		log.Error(logText)
 	case elapsed >= l.SlowThreshold && l.SlowThreshold != 0:
 		if rows == -1 {
 			logText = fmt.Sprintf("SLOW SQL >= %v [%.3f ms] [%s]", l.SlowThreshold, float64(elapsed.Microseconds())/1e3, sql)
 		} else {
 			logText = fmt.Sprintf("SLOW SQL >= %v [%.3f ms] [rows:%d] [%s]", l.SlowThreshold, float64(elapsed.Microseconds())/1e3, rows, sql)
 		}
-		l.Logger.Warning(logText)
+		log.Warning(logText)
 	case l.Level == gormLogger.Info:
 		if rows == -1 {
 			logText = fmt.Sprintf("[%.3f ms] [%s]", float64(elapsed.Microseconds())/1e3, sql)
@@ -182,7 +181,7 @@ func (l LoggerConfig) Trace(ctx context.Context, begin time.Time, fc func() (str
 			logText = fmt.Sprintf("[%.3f ms] [rows:%d] [%s]", float64(elapsed.Microseconds())/1e3, rows, sql)
 
 		}
-		l.Logger.Info(logText)
+		log.Info(logText)
 	}
 }
 
@@ -193,24 +192,30 @@ func (l LoggerConfig) ParamsFilter(ctx context.Context, sql string, params ...in
 	return sql, params
 }
 
-func NewClient(clientConfig ClientConfig, loggerConfig LoggerConfig) (*gorm.DB, error) {
-	loggerConfig.Logger.Info("初始化数据库")
+var session *gorm.DB
+
+func Connect(clientConfig ClientConfig, loggerConfig LoggerConfig) {
+	log.Info("init database")
 	url := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", clientConfig.User,
 		clientConfig.Password, clientConfig.Host, clientConfig.Port, clientConfig.DB)
-	session, err := gorm.Open(mysql.Open(url), &gorm.Config{Logger: loggerConfig})
+	s, err := gorm.Open(mysql.Open(url), &gorm.Config{Logger: loggerConfig})
 	if err != nil {
-		return nil, err
+		log.Error("database open error：%v", err)
 	}
-	sqlDB, _ := session.DB()
+	sqlDB, _ := s.DB()
 	err = sqlDB.Ping()
 	if err != nil {
-		return nil, err
+		log.Error("database connection error：%v", err)
 	}
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetMaxIdleConns(20)
-	loggerConfig.Logger.Info("初始化数据库成功")
-	if err != nil {
-		return nil, err
+	session = s
+	log.Info("init database success")
+}
+func Session() *gorm.DB {
+	log.Info(session)
+	if session == nil {
+		log.Panic("no database connection,execute the \"Connect\" function")
 	}
-	return session, nil
+	return session
 }

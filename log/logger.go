@@ -1,4 +1,4 @@
-package logger
+package log
 
 import (
 	"io"
@@ -35,22 +35,22 @@ func Extra(e map[string]interface{}) *Record {
 	return r
 }
 
-func Debug(message string, args ...interface{}) {
+func Debug(message interface{}, args ...interface{}) {
 	record.Debug(message, args...)
 }
 
-func Info(message string, args ...interface{}) {
+func Info(message interface{}, args ...interface{}) {
 	record.Info(message, args...)
 }
 
-func Warning(message string, args ...interface{}) {
+func Warning(message interface{}, args ...interface{}) {
 	record.Warning(message, args...)
 }
 
-func Error(message string, args ...interface{}) {
+func Error(message interface{}, args ...interface{}) {
 	record.Error(message, args...)
 }
 
-func Panic(message string, args ...interface{}) {
+func Panic(message interface{}, args ...interface{}) {
 	record.Panic(message, args...)
 }

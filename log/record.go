@@ -1,4 +1,4 @@
-package logger
+package log
 
 import (
 	"bytes"
@@ -136,13 +136,13 @@ func writeJsonLog(writer io.Writer, r *Record) {
 	}
 }
 
-func (r *Record) log(level Level, message string, args ...interface{}) {
+func (r *Record) log(level Level, message interface{}, args ...interface{}) {
 	r.Level = level
 	r.Time = time.Now()
 	if len(args) == 0 {
-		r.Message = message
+		r.Message = fmt.Sprint(message)
 	} else {
-		r.Message = fmt.Sprintf(message, args...)
+		r.Message = fmt.Sprintf(fmt.Sprint(message), args...)
 	}
 	r.Location = getLocation(4)
 	for _, v := range instance {
@@ -159,25 +159,25 @@ func (r *Record) log(level Level, message string, args ...interface{}) {
 	}
 }
 
-func (r *Record) Debug(message string, args ...interface{}) {
+func (r *Record) Debug(message interface{}, args ...interface{}) {
 	r.log(DEBUG, message, args...)
 }
 
-func (r *Record) Info(message string, args ...interface{}) {
+func (r *Record) Info(message interface{}, args ...interface{}) {
 	r.log(INFO, message, args...)
 }
 
-func (r *Record) Warning(message string, args ...interface{}) {
+func (r *Record) Warning(message interface{}, args ...interface{}) {
 	r.log(WARNING, message, args...)
 }
 
-func (r *Record) Error(message string, args ...interface{}) {
-	message = message + getCaller(4)
+func (r *Record) Error(message interface{}, args ...interface{}) {
+	message = fmt.Sprint(message) + getCaller(4)
 	r.log(ERROR, message, args...)
 }
 
-func (r *Record) Panic(message string, args ...interface{}) {
-	message = message + getCaller(4)
+func (r *Record) Panic(message interface{}, args ...interface{}) {
+	message = fmt.Sprint(message) + getCaller(4)
 	r.log(PANIC, message, args...)
 	os.Exit(0)
 }
