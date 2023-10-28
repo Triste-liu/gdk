@@ -113,7 +113,7 @@ type ClientConfig struct {
 	User     string
 	Password string
 	Host     string
-	Port     string
+	Port     int
 	DB       string
 }
 
@@ -196,7 +196,7 @@ var session *gorm.DB
 
 func Connect(clientConfig ClientConfig, loggerConfig LoggerConfig) {
 	log.Info("init database")
-	url := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", clientConfig.User,
+	url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", clientConfig.User,
 		clientConfig.Password, clientConfig.Host, clientConfig.Port, clientConfig.DB)
 	s, err := gorm.Open(mysql.Open(url), &gorm.Config{Logger: loggerConfig})
 	if err != nil {
