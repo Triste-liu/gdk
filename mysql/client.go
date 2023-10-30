@@ -206,6 +206,7 @@ func Connect(clientConfig ClientConfig, loggerConfig LoggerConfig) {
 	err = sqlDB.Ping()
 	if err != nil {
 		log.Error("database connection error：%v", err)
+		return
 	}
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetMaxIdleConns(20)
@@ -213,7 +214,6 @@ func Connect(clientConfig ClientConfig, loggerConfig LoggerConfig) {
 	log.Info("init database success")
 }
 func Session() *gorm.DB {
-	log.Info(session)
 	if session == nil {
 		log.Panic("no database connection,execute the \"Connect\" function")
 	}
