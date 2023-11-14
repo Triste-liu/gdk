@@ -144,7 +144,11 @@ func (r *Record) log(level Level, message interface{}, args ...interface{}) {
 	} else {
 		r.Message = fmt.Sprintf(fmt.Sprint(message), args...)
 	}
-	r.Location = getLocation(4)
+	skip := 4
+	if len(r.Extra) != 0 {
+		skip++
+	}
+	r.Location = getLocation(skip)
 	for _, v := range instance {
 		if r.Level >= v.Level {
 			switch v.Type {

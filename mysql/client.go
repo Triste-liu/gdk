@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
 	"gorm.io/plugin/soft_delete"
+	"runtime"
 	"time"
 )
 
@@ -156,29 +157,32 @@ func (l LoggerConfig) Error(ctx context.Context, msg string, data ...interface{}
 func (l LoggerConfig) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	elapsed := time.Since(begin)
 	sql, rows := fc()
+	pc, file, line, _ := runtime.Caller(3)
+	fn := runtime.FuncForPC(pc)
+	caller := fmt.Sprintf("%s:%s:%d", file, fn.Name(), line)
 	var logText string
 	switch {
 	case err != nil && (!errors.Is(err, gormLogger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
 
 		if rows == -1 {
-			logText = fmt.Sprintf("%s [%.3f ms] [%s]", err, float64(elapsed.Microseconds())/1e3, sql)
+			logText = fmt.Sprintf("[%s] %s [%.3f ms] [%s]", caller, err, float64(elapsed.Microseconds())/1e3, sql)
 		} else {
-			logText = fmt.Sprintf("%s [%.3f ms] [rows:%d] [%s]", err, float64(elapsed.Microseconds())/1e3, rows, sql)
+			logText = fmt.Sprintf("[%s] %s [%.3f ms] [rows:%d] [%s]", caller, err, float64(elapsed.Microseconds())/1e3, rows, sql)
 		}
 		log.Error(logText)
 	case elapsed >= l.SlowThreshold && l.SlowThreshold != 0:
 		if rows == -1 {
-			logText = fmt.Sprintf("SLOW SQL >= %v [%.3f ms] [%s]", l.SlowThreshold, float64(elapsed.Microseconds())/1e3, sql)
+			logText = fmt.Sprintf("[%s] SLOW SQL >= %v [%.3f ms]  [%s]", caller, l.SlowThreshold, float64(elapsed.Microseconds())/1e3, sql)
 		} else {
-			logText = fmt.Sprintf("SLOW SQL >= %v [%.3f ms] [rows:%d] [%s]", l.SlowThreshold, float64(elapsed.Microseconds())/1e3, rows, sql)
+			logText = fmt.Sprintf("[%s] SLOW SQL >= %v [%.3f ms]  [rows:%d] [%s]", caller, l.SlowThreshold, float64(elapsed.Microseconds())/1e3, rows, sql)
 		}
 		log.Warning(logText)
 	case l.Level == gormLogger.Info:
 		if rows == -1 {
-			logText = fmt.Sprintf("[%.3f ms] [%s]", float64(elapsed.Microseconds())/1e3, sql)
+			logText = fmt.Sprintf("[%s] [%.3f ms] [%s]", caller, float64(elapsed.Microseconds())/1e3, sql)
 
 		} else {
-			logText = fmt.Sprintf("[%.3f ms] [rows:%d] [%s]", float64(elapsed.Microseconds())/1e3, rows, sql)
+			logText = fmt.Sprintf("[%s] [%.3f ms] [rows:%d] [%s]", caller, float64(elapsed.Microseconds())/1e3, rows, sql)
 
 		}
 		log.Info(logText)
