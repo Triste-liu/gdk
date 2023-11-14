@@ -146,7 +146,7 @@ func (r *Record) log(level Level, message interface{}, args ...interface{}) {
 	}
 	skip := 4
 	if len(r.Extra) != 0 {
-		skip++
+		skip--
 	}
 	r.Location = getLocation(skip)
 	for _, v := range instance {
