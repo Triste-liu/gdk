@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -31,17 +32,17 @@ type Level int
 func (l Level) String() string {
 	switch l {
 	case DEBUG:
-		return "DEBUG  "
+		return "DEBUG" + strings.Repeat(" ", 2)
 	case INFO:
-		return "INFO   "
+		return "INFO" + strings.Repeat(" ", 3)
 	case WARNING:
 		return "WARNING"
 	case ERROR:
-		return "ERROR  "
+		return "ERROR" + strings.Repeat(" ", 2)
 	case PANIC:
-		return "PANIC  "
+		return "PANIC" + strings.Repeat(" ", 2)
 	default:
-		return "DEBUG  "
+		return "DEBUG" + strings.Repeat(" ", 2)
 	}
 }
 
@@ -87,10 +88,10 @@ func getCaller(skip int) string {
 	} else {
 		frames = runtime.CallersFrames(p)
 	}
-	var st string
+	st := "\nTraceBack:"
 	for {
 		frame, more := frames.Next()
-		st += fmt.Sprintf("\n%s:%d  ->  %s", frame.File, frame.Line, frame.Function)
+		st += fmt.Sprintf("\n%s:%d", strings.Replace(frame.Function, "/", ".", -1), frame.Line)
 		if !more {
 			break
 		}
@@ -99,10 +100,10 @@ func getCaller(skip int) string {
 }
 
 func getLocation(skip int) string {
-	pc, file, line, _ := runtime.Caller(skip)
+	pc, _, line, _ := runtime.Caller(skip)
 	fn := runtime.FuncForPC(pc)
-	///go/src/control-center/service/chat/handler.go:chat.abnormal:77
-	return fmt.Sprintf("%s:%s:%d", file, fn.Name(), line)
+	funcName := strings.Replace(fn.Name(), "/", ".", -1)
+	return fmt.Sprintf("%s:%d", funcName, line)
 }
 
 func writeTextLog(writer io.Writer, r *Record) {
