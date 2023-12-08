@@ -2,8 +2,6 @@ package mysql
 
 import (
 	"context"
-	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/triste-liu/gdk/log"
@@ -14,12 +12,6 @@ import (
 	"runtime"
 	"time"
 )
-
-type Bool bool
-
-type UnixTime time.Time
-
-type Map map[string]interface{}
 
 type DefaultModel struct {
 	ID        int                   `gorm:"primarykey;comment:主键" json:"id"`
@@ -39,56 +31,6 @@ type PagePayload struct {
 type PageData struct {
 	Data  interface{} `json:"data"`
 	Total int64       `json:"total"`
-}
-
-func (t UnixTime) MarshalJSON() ([]byte, error) {
-	//自定义序列化
-	// 时间为空值时处理为0，避免出现时间为负的情况
-	if time.Time(t).Equal(time.Time{}) {
-		stamp := fmt.Sprintf("%d", 0)
-		return []byte(stamp), nil
-	}
-	stamp := fmt.Sprintf("%d", time.Time(t).Unix())
-	return []byte(stamp), nil
-}
-
-func (t UnixTime) Value() (driver.Value, error) {
-	//数据存储前调用
-	return time.Time(t), nil
-}
-
-func (b *Bool) Scan(value interface{}) error {
-	v := value.(int64)
-	if v == 1 {
-		*b = true
-	}
-	return nil
-}
-
-func (b Bool) Value() (driver.Value, error) {
-	var v int64
-	if b == true {
-		v = 1
-	}
-	return v, nil
-}
-
-func (m *Map) Scan(value interface{}) error {
-	v := value.([]uint8)
-	err := json.Unmarshal(v, &m)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m Map) Value() (driver.Value, error) {
-	marshal, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-	v := string(marshal)
-	return v, nil
 }
 
 func PageQuery(db *gorm.DB, page PagePayload, data interface{}, model interface{}) (p PageData) {
