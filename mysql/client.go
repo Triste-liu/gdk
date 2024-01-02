@@ -2,8 +2,6 @@ package mysql
 
 import (
 	"context"
-	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/triste-liu/gdk/log"
@@ -15,17 +13,26 @@ import (
 	"time"
 )
 
-type Bool bool
-
-type UnixTime time.Time
-
-type Map map[string]interface{}
-
 type DefaultModel struct {
 	ID        int                   `gorm:"primarykey;comment:主键" json:"id"`
-	CreatedAt UnixTime              `gorm:"TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP;comment:创建时间" json:"created_at"`
-	UpdatedAt UnixTime              `gorm:"TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;comment:更新时间" json:"updated_at"`
+	CreatedAt UnixTime              `gorm:"autoCreateTime:false;TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP;comment:创建时间" json:"created_at"`
+	UpdatedAt UnixTime              `gorm:"autoUpdateTime:false;TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;comment:更新时间" json:"updated_at"`
 	IsDeleted soft_delete.DeletedAt `gorm:"default:0;COMMENT:删除时间;softDelete:flag" json:"-"`
+}
+
+func (m *DefaultModel) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.CreatedAt == 0 {
+		m.CreatedAt = UnixTime(time.Now().UnixMilli())
+	}
+	if m.UpdatedAt == 0 {
+		m.UpdatedAt = UnixTime(time.Now().UnixMilli())
+	}
+	return nil
+}
+
+func (m *DefaultModel) BeforeUpdate(tx *gorm.DB) (err error) {
+	m.UpdatedAt = UnixTime(time.Now().UnixMilli())
+	return nil
 }
 
 // PagePayload 分页查询
@@ -39,56 +46,6 @@ type PagePayload struct {
 type PageData struct {
 	Data  interface{} `json:"data"`
 	Total int64       `json:"total"`
-}
-
-func (t UnixTime) MarshalJSON() ([]byte, error) {
-	//自定义序列化
-	// 时间为空值时处理为0，避免出现时间为负的情况
-	if time.Time(t).Equal(time.Time{}) {
-		stamp := fmt.Sprintf("%d", 0)
-		return []byte(stamp), nil
-	}
-	stamp := fmt.Sprintf("%d", time.Time(t).Unix())
-	return []byte(stamp), nil
-}
-
-func (t UnixTime) Value() (driver.Value, error) {
-	//数据存储前调用
-	return time.Time(t), nil
-}
-
-func (b *Bool) Scan(value interface{}) error {
-	v := value.(int64)
-	if v == 1 {
-		*b = true
-	}
-	return nil
-}
-
-func (b Bool) Value() (driver.Value, error) {
-	var v int64
-	if b == true {
-		v = 1
-	}
-	return v, nil
-}
-
-func (m *Map) Scan(value interface{}) error {
-	v := value.([]uint8)
-	err := json.Unmarshal(v, &m)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m Map) Value() (driver.Value, error) {
-	marshal, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-	v := string(marshal)
-	return v, nil
 }
 
 func PageQuery(db *gorm.DB, page PagePayload, data interface{}, model interface{}) (p PageData) {
