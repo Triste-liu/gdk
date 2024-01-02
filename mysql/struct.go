@@ -19,7 +19,8 @@ func (t *UnixTime) Scan(value interface{}) error {
 }
 
 func (t UnixTime) Value() (driver.Value, error) {
-	return time.Unix(int64(t), 0), nil
+	ti := int64(t)
+	return time.Unix(ti/1000, ti%1000*int64(time.Millisecond)), nil
 }
 
 func (b *Bool) Scan(value interface{}) error {

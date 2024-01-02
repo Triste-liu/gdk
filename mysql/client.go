@@ -15,9 +15,24 @@ import (
 
 type DefaultModel struct {
 	ID        int                   `gorm:"primarykey;comment:主键" json:"id"`
-	CreatedAt UnixTime              `gorm:"TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP;comment:创建时间" json:"created_at"`
-	UpdatedAt UnixTime              `gorm:"TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;comment:更新时间" json:"updated_at"`
+	CreatedAt UnixTime              `gorm:"autoCreateTime:false;TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP;comment:创建时间" json:"created_at"`
+	UpdatedAt UnixTime              `gorm:"autoUpdateTime:false;TYPE:TIMESTAMP;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;comment:更新时间" json:"updated_at"`
 	IsDeleted soft_delete.DeletedAt `gorm:"default:0;COMMENT:删除时间;softDelete:flag" json:"-"`
+}
+
+func (m *DefaultModel) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.CreatedAt == 0 {
+		m.CreatedAt = UnixTime(time.Now().UnixMilli())
+	}
+	if m.UpdatedAt == 0 {
+		m.UpdatedAt = UnixTime(time.Now().UnixMilli())
+	}
+	return nil
+}
+
+func (m *DefaultModel) BeforeUpdate(tx *gorm.DB) (err error) {
+	m.UpdatedAt = UnixTime(time.Now().UnixMilli())
+	return nil
 }
 
 // PagePayload 分页查询
