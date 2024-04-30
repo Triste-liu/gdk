@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"io"
 	"os"
 )
@@ -30,9 +31,8 @@ func SetLevel(level Level) {
 	instance[0].Level = level
 }
 
-func Extra(e map[string]interface{}) *Record {
-	r := &Record{Extra: e}
-	return r
+func WithFields(e map[string]interface{}) *Record {
+	return &Record{extra: e, skip: true}
 }
 
 func Debug(message interface{}, args ...interface{}) {
@@ -53,4 +53,18 @@ func Error(message interface{}, args ...interface{}) {
 
 func Panic(message interface{}, args ...interface{}) {
 	record.Panic(message, args...)
+}
+
+func WithContext(ctx context.Context) *Record {
+	var r Record
+	traceId, ok := ctx.Value("traceId").(string)
+	if ok {
+		r.TraceId = &traceId
+	}
+	clientIp, ok := ctx.Value("clientIp").(string)
+	if ok {
+		r.ClientIp = &clientIp
+	}
+	r.skip = true
+	return &r
 }

@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -68,7 +69,10 @@ type Record struct {
 	Level    Level
 	Location string
 	Message  string
-	Extra    map[string]interface{}
+	TraceId  *string
+	ClientIp *string
+	extra    map[string]interface{}
+	skip     bool
 }
 
 func (r *Record) Byte() []byte {
@@ -112,8 +116,8 @@ func writeTextLog(writer io.Writer, r *Record) {
 	b.WriteString(r.Time.Format(time.DateTime+".000") + " | ")
 	b.WriteString(r.Level.String() + " | ")
 	b.WriteString(r.Location + " | ")
-	if len(r.Extra) != 0 {
-		e, err := json.Marshal(r.Extra)
+	if len(r.extra) != 0 {
+		e, err := json.Marshal(r.extra)
 		if err != nil {
 			fmt.Printf("extra marshal error:%s\n", err)
 		} else {
@@ -146,7 +150,7 @@ func (r *Record) log(level Level, message interface{}, args ...interface{}) {
 		r.Message = fmt.Sprintf(fmt.Sprint(message), args...)
 	}
 	skip := 4
-	if len(r.Extra) != 0 {
+	if r.skip {
 		skip--
 	}
 	r.Location = getLocation(skip)
@@ -177,12 +181,30 @@ func (r *Record) Warning(message interface{}, args ...interface{}) {
 }
 
 func (r *Record) Error(message interface{}, args ...interface{}) {
-	message = fmt.Sprint(message) + getCaller(4)
+	message = fmt.Sprint(message) + getCaller(3)
 	r.log(ERROR, message, args...)
 }
 
 func (r *Record) Panic(message interface{}, args ...interface{}) {
-	message = fmt.Sprint(message) + getCaller(4)
+	message = fmt.Sprint(message) + getCaller(3)
 	r.log(PANIC, message, args...)
 	os.Exit(0)
+}
+
+func (r *Record) WithFields(e map[string]interface{}) *Record {
+	r.extra = e
+	r.skip = true
+	return r
+}
+func (r *Record) WithContext(ctx context.Context) *Record {
+	traceId, ok := ctx.Value("traceId").(string)
+	if ok {
+		r.TraceId = &traceId
+	}
+	clientIp, ok := ctx.Value("clientIp").(string)
+	if ok {
+		r.ClientIp = &clientIp
+	}
+	r.skip = true
+	return r
 }
